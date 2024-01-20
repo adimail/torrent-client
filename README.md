@@ -45,7 +45,7 @@ Use the arrow keys to navigate: ↓ ↑ → ←
 
 ## Demo
 
-![torrent-client-demo](torrent-client-demo.gif)
+![torrent-client-demo](assets/torrent-client-demo.gif)
 
 ---
 

@@ -8,85 +8,107 @@ import (
 	"github.com/adimail/torrent-client/internal/bencode"
 )
 
-func TestDecodeBencode(t *testing.T) {
-	// Test case for decoding a string
-	t.Run("Decode String", func(t *testing.T) {
-		input := "5:hello"
-		expected := "hello"
+type testcases struct {
+	input   string
+	expect  interface{}
+	comment string
+}
 
-		result, err := bencode.DecodeBencode(input)
-		if err != nil {
-			t.Errorf("Unexpected error: %v", err)
+func TestDecodeBencode(t *testing.T) {
+	// string
+	t.Run("Decode String", func(t *testing.T) {
+		testCases := []testcases{
+			{"11:hello World", "hello World", "Decode string"},
+			{"0:", "", "Decode empty string"},
+			{"7:1234567", "1234567", "Decode string with digits"},
 		}
 
-		if !reflect.DeepEqual(result, expected) {
-			t.Errorf("Expected %v, but got %v", expected, result)
-			fmt.Printf("Decoded result: %v\n", result)
-			fmt.Printf("Error: %v\n", err)
+		for _, tc := range testCases {
+			t.Run(tc.comment, func(t *testing.T) {
+				result, err := bencode.DecodeBencode(tc.input)
+
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+
+				if !reflect.DeepEqual(result, tc.expect) {
+					t.Errorf("Expected %v, but got %v", tc.expect, result)
+					fmt.Printf("Decoded result: %v\n", result)
+					fmt.Printf("Error: %v\n", err)
+				}
+			})
 		}
 	})
 
 	// Test case for decoding an integer
 	t.Run("Decode Integer", func(t *testing.T) {
-		input := "i42e"
-		expected := 42
-
-		result, err := bencode.DecodeBencode(input)
-		if err != nil {
-			t.Errorf("Unexpected error: %v", err)
+		testCases := []testcases{
+			{"i15e", 15, "Decode positive integer"},
+			{"i-42e", -42, "Decode negative integer"},
 		}
 
-		if !reflect.DeepEqual(result, expected) {
-			t.Errorf("Expected %v, but got %v", expected, result)
-			fmt.Printf("Decoded result: %v\n", result)
-			fmt.Printf("Error: %v\n", err)
+		for _, tc := range testCases {
+			t.Run(tc.comment, func(t *testing.T) {
+				result, err := bencode.DecodeBencode(tc.input)
+
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+
+				if !reflect.DeepEqual(result, tc.expect) {
+					t.Errorf("Expected %v, but got %v", tc.expect, result)
+					fmt.Printf("Decoded result: %v\n", result)
+					fmt.Printf("Error: %v\n", err)
+				}
+			})
 		}
 	})
 
-	// Test case for decoding a list
+	// list
 	t.Run("Decode List", func(t *testing.T) {
-		input := "l3:one3:twoe"
-		expected := []interface{}{"one", "two"}
-
-		result, err := bencode.DecodeBencode(input)
-		if err != nil {
-			t.Errorf("Unexpected error: %v", err)
+		testCases := []testcases{
+			{"l3:one3:twoe", []interface{}{"one", "two"}, "Decode list of strings"},
 		}
 
-		if !reflect.DeepEqual(result, expected) {
-			t.Errorf("Expected %v, but got %v", expected, result)
-			fmt.Printf("Decoded result: %v\n", result)
-			fmt.Printf("Error: %v\n", err)
+		for _, tc := range testCases {
+			t.Run(tc.comment, func(t *testing.T) {
+				result, err := bencode.DecodeBencode(tc.input)
+
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+
+				if !reflect.DeepEqual(result, tc.expect) {
+					t.Errorf("Expected %v, but got %v", tc.expect, result)
+					fmt.Printf("Decoded result: %v\n", result)
+					fmt.Printf("Error: %v\n", err)
+				}
+			})
 		}
 	})
 
-	// // Test case for decoding an empty dictionary
-	// t.Run("Decode Empty Dictionary", func(t *testing.T) {
-	// 	input := "de"
-	// 	expected := map[string]interface{}{}
+	// Dictionary
+	t.Run("Decode Dictionary", func(t *testing.T) {
+		testCases := []testcases{
+			{"de", map[string]interface{}{}, "Decode empty dictionary"},
+			{"d3:key5:value3:foo3:bare", map[string]interface{}{"key": "value", "foo": "bar"}, "Decode dictionary with strings"},
+			{"d3:cow3:moo3:dog4:barke", map[string]interface{}{"cow": "moo", "dog": "bark"}, "Decode dictionary with strings"},
+		}
 
-	// 	result, err := decodeDictionary([]byte(input))
-	// 	if err != nil {
-	// 		t.Errorf("Unexpected error: %v", err)
-	// 	}
+		for _, tc := range testCases {
+			t.Run(tc.comment, func(t *testing.T) {
+				result, err := bencode.DecodeBencode(tc.input)
 
-	// 	if !reflect.DeepEqual(result, expected) {
-	// 		t.Errorf("Expected %v, but got %v", expected, result)
-	// 	}
-	// })
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
 
-	// // Test case for decoding a dictionary with string values
-	// t.Run("Decode Dictionary with Strings", func(t *testing.T) {
-	// 	input := "d3:key53:value3:foo3:bare"
-	// 	expected := map[string]interface{}{"key": "value", "foo": "bar"}
-
-	// 	result, err := decodeDictionary([]byte(input))
-	// 	if err != nil {
-	// 		t.Errorf("Unexpected error: %v", err)
-	// 	}
-
-	// 	if !reflect.DeepEqual(result, expected) {
-	// 		t.Errorf("Expected %v, but got %v", expected, result)
-	// 	}
-	// })
+				if !reflect.DeepEqual(result, tc.expect) {
+					t.Errorf("Expected %v, but got %v", tc.expect, result)
+					fmt.Printf("Decoded result: %v\n", result)
+					fmt.Printf("Error: %v\n", err)
+				}
+			})
+		}
+	})
 }

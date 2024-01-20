@@ -68,8 +68,8 @@ func decodeList(data []byte) ([]interface{}, error) {
 
 		list = append(list, item)
 
-		// Adjust the remaining data after decoding each element
-		data = data[len(fmt.Sprintf("%v", item))+len(strconv.Itoa(len(fmt.Sprintf("%v", item))))+1:]
+		strLen := len(fmt.Sprintf("%v", item))
+		data = data[strLen+len(strconv.Itoa(strLen))+1:]
 	}
 
 	return list, nil
@@ -84,22 +84,19 @@ func decodeDictionary(data []byte) (map[string]interface{}, error) {
 			return nil, err
 		}
 
-		// Move data slice to the position after decoding the key and ':'
-		data = data[len(strconv.Itoa(len(key)))+len(key)+1:]
+		keyLen := len(fmt.Sprintf("%v", key))
+		data = data[keyLen+len(strconv.Itoa(keyLen))+1:]
 
 		value, err := decodeBencodeHelper(data)
 		if err != nil {
 			return nil, err
 		}
 
-		// Move data slice to the position after decoding the value
-		data = data[len(fmt.Sprintf("%v", value)):]
+		valLen := len(fmt.Sprintf("%v", value))
+		data = data[valLen+len(strconv.Itoa(valLen))+1:]
 
 		dict[key] = value
 	}
-
-	// Move data slice to the position after decoding the last 'e'
-	data = data[1:]
 
 	return dict, nil
 }

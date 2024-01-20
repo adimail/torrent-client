@@ -1,4 +1,4 @@
-package decode
+package bencode
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func decodeBencode(data string) (interface{}, error) {
+func DecodeBencode(data string) (interface{}, error) {
 	return decodeBencodeHelper([]byte(data))
 }
 
@@ -26,7 +26,7 @@ func decodeBencodeHelper(data []byte) (interface{}, error) {
 func decodeInteger(data []byte) (int, error) {
 	endIndex := indexOf(data, 'e')
 	if endIndex == -1 {
-		return 0, errors.New("Invalid Bencode format: Missing 'e' for integer")
+		return 0, errors.New("invalid bencode format: missing 'e' for integer")
 	}
 
 	intValue, err := strconv.Atoi(string(data[:endIndex]))
@@ -111,14 +111,4 @@ func indexOf(data []byte, target byte) int {
 		}
 	}
 	return -1
-}
-
-func main() {
-	bencodedData := "l4:spam4:eggse"
-	result, err := decodeBencode(bencodedData)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Println("Decoded Result:", result)
-	}
 }

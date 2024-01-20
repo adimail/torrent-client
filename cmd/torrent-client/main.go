@@ -44,7 +44,7 @@ func main() {
 		fmt.Println("No torrent files detected.")
 		return
 	} else {
-		fmt.Println(len(torrentFiles), "torrent files detected")
+		fmt.Println(len(torrentFiles), "torrent files detected in current directory")
 		fmt.Println("-----------------------------------------")
 
 	}
@@ -66,9 +66,6 @@ func main() {
 		fmt.Printf("Prompt failed %v\n", err)
 		return
 	}
-
-	fmt.Printf("You selected %s\n", result)
-	fmt.Printf("Downloading... %s\n", result)
 
 	//  File path read successfully
 	inPath := result

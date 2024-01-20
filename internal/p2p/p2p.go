@@ -5,12 +5,12 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"log"
-	"runtime"
 	"time"
 
 	"github.com/adimail/torrent-client/internal/client"
 	"github.com/adimail/torrent-client/internal/message"
 	"github.com/adimail/torrent-client/internal/peers"
+	"github.com/schollz/progressbar/v3"
 )
 
 // MaxBlockSize is the largest number of bytes a request can ask for
@@ -133,11 +133,9 @@ func checkIntegrity(pw *pieceWork, buf []byte) error {
 func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork, results chan *pieceResult) {
 	c, err := client.New(peer, t.PeerID, t.InfoHash)
 	if err != nil {
-		log.Printf("Could not handshake with %s. Disconnecting\n", peer.IP)
 		return
 	}
 	defer c.Conn.Close()
-	log.Printf("Completed handshake with %s\n", peer.IP)
 
 	c.SendUnchoke()
 	c.SendInterested()
@@ -151,14 +149,12 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 		// Download the piece
 		buf, err := attemptDownloadPiece(c, pw)
 		if err != nil {
-			log.Println("Exiting", err)
 			workQueue <- pw // Put piece back on the queue
 			return
 		}
 
 		err = checkIntegrity(pw, buf)
 		if err != nil {
-			log.Printf("Piece #%d failed integrity check\n", pw.index)
 			workQueue <- pw // Put piece back on the queue
 			continue
 		}
@@ -182,36 +178,80 @@ func (t *Torrent) calculatePieceSize(index int) int {
 	return end - begin
 }
 
+func (t *Torrent) TotalSize() int {
+	return len(t.PieceHashes) * t.PieceLength
+}
+
 // Download downloads the torrent. This stores the entire file in memory.
 func (t *Torrent) Download() ([]byte, error) {
-	log.Println("Starting download for", t.Name)
-	// Init queues for workers to retrieve work and send results
+	totalSize := t.TotalSize() / 1000000
+
+	log.Println("\n\nStarting download for", t.Name)
+	fmt.Printf("Total size of the torrent file: %d MB\n\n", totalSize)
+
 	workQueue := make(chan *pieceWork, len(t.PieceHashes))
 	results := make(chan *pieceResult)
+
+	// Create a progress bar
+	bar := progressbar.Default(int64(len(t.PieceHashes)))
+
 	for index, hash := range t.PieceHashes {
 		length := t.calculatePieceSize(index)
 		workQueue <- &pieceWork{index, hash, length}
 	}
 
-	// Start workers
 	for _, peer := range t.Peers {
 		go t.startDownloadWorker(peer, workQueue, results)
 	}
 
-	// Collect results into a buffer until full
 	buf := make([]byte, t.Length)
 	donePieces := 0
+
+	// Channel for updating the progress bar with download speed
+	speedUpdate := make(chan float64)
+
+	// Goroutine to periodically update the progress bar with download speed
+	go func() {
+		var lastDonePieces int
+		var lastTime = time.Now()
+
+		for {
+			time.Sleep(time.Second) // Update speed every second
+
+			currentTime := time.Now()
+			timeElapsed := currentTime.Sub(lastTime).Seconds()
+
+			downloadedPieces := donePieces - lastDonePieces
+			downloadSpeed := float64(downloadedPieces*t.calculatePieceSize(0)) / (timeElapsed * 1024 * 1024) // Use piece size from calculatePieceSize function
+
+			speedUpdate <- downloadSpeed
+
+			lastDonePieces = donePieces
+			lastTime = currentTime
+		}
+	}()
+
 	for donePieces < len(t.PieceHashes) {
 		res := <-results
 		begin, end := t.calculateBoundsForPiece(res.index)
 		copy(buf[begin:end], res.buf)
 		donePieces++
 
-		percent := float64(donePieces) / float64(len(t.PieceHashes)) * 100
-		numWorkers := runtime.NumGoroutine() - 1 // subtract 1 for main thread
-		log.Printf("(%0.2f%%) Downloaded piece #%d from %d peers\n", percent, res.index, numWorkers)
+		// Update the progress bar with the current speed
+		select {
+		case speed := <-speedUpdate:
+			bar.Describe(fmt.Sprintf("Speed: %.2f MB/s", speed))
+		default:
+		}
+
+		bar.Add(1)
 	}
+
 	close(workQueue)
+
+	// Display the final download speed
+	speed := <-speedUpdate
+	bar.Describe(fmt.Sprintf("Speed: %.2f MB/s", speed))
 
 	return buf, nil
 }

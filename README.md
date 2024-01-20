@@ -14,24 +14,24 @@ An amazing blog post by [veggiedefender](https://blog.jse.li/posts/torrent/)
 
 ## Getting Started
 
-1. ### Prerequisites
+### Prerequisites
 
 - [Go](https://golang.org/dl/): Make sure you have Go installed on your system.
 
-2. #### Installing Dependencies
+### Installing Dependencies
 
 ```bash
 go get -u github.com/adimail/torrent-client/internal/torrentfile
 go get -u github.com/manifoldco/promptui
 ```
 
-3. #### Compiling the program
+#### Compiling the program
 
 ```bash
 go build cmd/torrent-client/main.go
 ```
 
-4. #### Run
+#### Run
 
 ```bash
 ./main
@@ -41,7 +41,11 @@ Through a user interface, select the torrent file you would like to download and
 
 Use the arrow keys to navigate: ↓ ↑ → ←
 
-![Client-server-p2p](assets/client-server-p2p.png)
+![Client-server-p2p](assets/ui.png)
+
+## Demo
+
+![torrent-client-demo](torrent-client-demo.gif)
 
 ---
 
@@ -119,3 +123,4 @@ Supports: Strings, lists, integers, dictionaries.
 
 - [github.com/manifoldco/promptui](https://github.com/manifoldco/promptui)
 - [github.com/jackpal/bencode-go](https://github.com/jackpal/bencode-go)
+- [github.com/schollz/progressbar/v3](https://github.com/schollz/progressbar/v3)
